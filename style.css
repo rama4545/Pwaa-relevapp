@@ -1,0 +1,417 @@
+/* ==============================================
+   style.css — Estilos de RelevApp
+   Diseño moderno, responsive y adaptado a mobile
+   ============================================== */
+
+/* Variables de colores para usar en todo el archivo */
+:root {
+  --color-primario: #1a73e8;
+  --color-primario-oscuro: #1558b0;
+  --color-secundario: #34a853;
+  --color-acento: #fbbc04;
+  --color-peligro: #ea4335;
+  --color-fondo: #f0f4f8;
+  --color-tarjeta: #ffffff;
+  --color-texto: #202124;
+  --color-texto-suave: #5f6368;
+  --color-borde: #dadce0;
+  --sombra-tarjeta: 0 2px 8px rgba(0, 0, 0, 0.12);
+  --radio-borde: 12px;
+  --fuente-principal: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* Reset básico para que todos los navegadores arranquen igual */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--fuente-principal);
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==================
+   ENCABEZADO
+================== */
+.encabezado {
+  background: linear-gradient(135deg, var(--color-primario), var(--color-primario-oscuro));
+  color: white;
+  padding: 16px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.encabezado-contenido {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.icono-encabezado {
+  font-size: 2rem;
+}
+
+.titulo-app {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.subtitulo-app {
+  font-size: 0.8rem;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+/* ==================
+   CONTENEDOR PRINCIPAL
+================== */
+.contenedor-principal {
+  flex: 1;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* ==================
+   TARJETAS (secciones)
+================== */
+.tarjeta {
+  background-color: var(--color-tarjeta);
+  border-radius: var(--radio-borde);
+  padding: 20px;
+  box-shadow: var(--sombra-tarjeta);
+  border: 1px solid var(--color-borde);
+}
+
+.titulo-seccion {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-texto);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icono-seccion {
+  font-size: 1.2rem;
+}
+
+.descripcion-seccion {
+  font-size: 0.85rem;
+  color: var(--color-texto-suave);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+/* ==================
+   BOTONES
+================== */
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s, opacity 0.2s;
+  width: 100%;
+  font-family: var(--fuente-principal);
+}
+
+.boton:active {
+  transform: scale(0.98);
+}
+
+/* Botón azul principal (capturar) */
+.boton-primario {
+  background-color: var(--color-primario);
+  color: white;
+}
+
+.boton-primario:hover {
+  background-color: var(--color-primario-oscuro);
+}
+
+/* Botón secundario (extraer texto) */
+.boton-secundario {
+  background-color: #e8f0fe;
+  color: var(--color-primario);
+  margin-bottom: 14px;
+}
+
+.boton-secundario:hover:not(:disabled) {
+  background-color: #d2e3fc;
+}
+
+/* Botón verde (ubicación) */
+.boton-ubicacion {
+  background-color: var(--color-secundario);
+  color: white;
+}
+
+.boton-ubicacion:hover {
+  background-color: #2d9144;
+}
+
+/* Botón de copiar */
+.boton-copiar {
+  background-color: #f1f3f4;
+  color: var(--color-texto);
+  border: 1px solid var(--color-borde);
+  margin-top: 12px;
+}
+
+.boton-copiar:hover:not(:disabled) {
+  background-color: #e8eaed;
+}
+
+/* Estado deshabilitado de cualquier botón */
+.boton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* El input de la cámara está oculto, solo lo usamos por código */
+.input-oculto {
+  display: none;
+}
+
+/* ==================
+   SECCIÓN CÁMARA
+================== */
+.contenedor-imagen {
+  margin-top: 14px;
+  border: 2px dashed var(--color-borde);
+  border-radius: 10px;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-color: #f8f9fa;
+  position: relative;
+}
+
+.texto-placeholder {
+  color: var(--color-texto-suave);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 20px;
+}
+
+.vista-previa {
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  border-radius: 8px;
+  display: none; /* Se muestra cuando hay imagen */
+}
+
+/* ==================
+   SECCIÓN OCR
+================== */
+
+/* Barra de progreso del OCR */
+.contenedor-progreso {
+  display: none; /* Aparece solo cuando está procesando */
+  margin-bottom: 12px;
+  background-color: #f1f3f4;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  height: 8px;
+}
+
+.barra-progreso {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primario), #4285f4);
+  border-radius: 6px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.texto-progreso {
+  font-size: 0.8rem;
+  color: var(--color-texto-suave);
+  text-align: center;
+  margin-top: 8px;
+  display: none;
+}
+
+/* Caja de texto extraído */
+.contenedor-texto {
+  min-height: 100px;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  padding: 14px;
+  background-color: #f8f9fa;
+  margin-bottom: 4px;
+}
+
+.texto-extraido {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--color-texto);
+  white-space: pre-wrap; /* Respeta saltos de línea del texto reconocido */
+  word-break: break-word;
+}
+
+/* Mensaje de copiado (aparece y desaparece) */
+.mensaje-copiado {
+  display: none;
+  background-color: #e6f4ea;
+  color: var(--color-secundario);
+  text-align: center;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  animation: aparecer 0.3s ease;
+}
+
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ==================
+   SECCIÓN UBICACIÓN
+================== */
+.tarjeta-coordenadas {
+  background-color: #f8f9fa;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  padding: 14px;
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.coordenada-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.etiqueta-coordenada {
+  color: var(--color-texto-suave);
+  font-weight: 500;
+}
+
+.valor-coordenada {
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  color: var(--color-primario);
+  background-color: #e8f0fe;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+}
+
+.error-ubicacion {
+  color: var(--color-peligro);
+  font-size: 0.85rem;
+  margin-top: 10px;
+  display: none;
+}
+
+/* ==================
+   SECCIÓN MAPA
+================== */
+.mapa-contenedor {
+  width: 100%;
+  height: 300px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--color-borde);
+  margin-top: 14px;
+  display: none; /* Se muestra cuando hay ubicación */
+  z-index: 0; /* Leaflet maneja su propio z-index */
+}
+
+.nota-mapa {
+  font-size: 0.85rem;
+  color: var(--color-texto-suave);
+  text-align: center;
+  margin-top: 14px;
+  font-style: italic;
+}
+
+/* ==================
+   PIE DE PÁGINA
+================== */
+.pie-pagina {
+  text-align: center;
+  padding: 16px;
+  font-size: 0.8rem;
+  color: var(--color-texto-suave);
+  border-top: 1px solid var(--color-borde);
+  background-color: var(--color-tarjeta);
+  margin-top: auto;
+}
+
+/* ==================
+   RESPONSIVE (pantallas más grandes)
+================== */
+@media (min-width: 600px) {
+  .tarjeta-coordenadas {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .coordenada-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 6px;
+  }
+
+  .mapa-contenedor {
+    height: 380px;
+  }
+}
+
+/* Logo en encabezado */
+.logo-encabezado {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+/* Colores adicionales para mensajes de precisión */
+.error-ubicacion {
+  display: none;
+  font-size: 0.85rem;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  line-height: 1.4;
+}
+
+/* Sobrescribimos el color base — el emoji ya indica el tipo */
+#errorUbicacion {
+  background-color: #fff8e1;
+  color: #7a5c00;
+  border: 1px solid #ffe082;
+}
