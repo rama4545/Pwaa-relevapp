@@ -1,6 +1,5 @@
 // ==============================================
 // js/ocr.js — Módulo de reconocimiento de texto (OCR)
-// Usa Tesseract.js con preprocesamiento de imagen
 // ==============================================
 
 const botonOCR           = document.getElementById('botonOCR');
@@ -30,33 +29,38 @@ async function procesarOCR(imagen) {
   placeholderTexto.style.display = 'none';
 
   try {
-    // Preprocesamos la imagen antes de dársela a Tesseract
-    // Esto mejora mucho la precisión: convierte a blanco/negro con alto contraste
-    const imagenProcesada = await preprocesarImagen(imagen);
-
+    // Corremos Tesseract dos veces: una sobre la imagen original
+    // y otra sobre la imagen preprocesada, y nos quedamos con el mejor resultado
     const worker = await Tesseract.createWorker('spa+eng', 1, {
       logger: (progreso) => actualizarProgreso(progreso)
     });
 
-    // PSM 6 = trata la imagen como un bloque de texto uniforme
-    // Ayuda a ignorar elementos visuales que no son texto
     await worker.setParameters({
-      tessedit_pageseg_mode: '6'
+      tessedit_pageseg_mode: '3' // PSM 3 = detección automática de regiones
     });
 
-    const resultado = await worker.recognize(imagenProcesada);
+    // Pasada 1: imagen original (funciona bien con texto oscuro sobre fondo claro)
+    textoProgreso.textContent = 'Analizando imagen original...';
+    const resultado1 = await worker.recognize(imagen);
+    const texto1 = limpiarTexto(resultado1.data.text);
 
-    // Limpiamos el texto: sacamos líneas que son solo símbolos o basura
-    const texto = limpiarTexto(resultado.data.text);
-
-    if (texto.length > 0) {
-      textoReconocido.textContent = texto;
-      document.getElementById('btnCopiar').disabled = false;
-    } else {
-      textoReconocido.textContent = '⚠️ No se detectó texto. Intentá con mejor iluminación o una imagen más nítida.';
-    }
+    // Pasada 2: imagen preprocesada (mejora texto en fondos complejos)
+    textoProgreso.textContent = 'Analizando con preprocesamiento...';
+    const imagenProcesada = await preprocesarImagen(imagen);
+    const resultado2 = await worker.recognize(imagenProcesada);
+    const texto2 = limpiarTexto(resultado2.data.text);
 
     await worker.terminate();
+
+    // Nos quedamos con el resultado que tenga más texto útil
+    const textoFinal = texto1.length >= texto2.length ? texto1 : texto2;
+
+    if (textoFinal.length > 0) {
+      textoReconocido.textContent = textoFinal;
+      document.getElementById('btnCopiar').disabled = false;
+    } else {
+      textoReconocido.textContent = '⚠️ No se detectó texto. Intentá con mejor iluminación o acercate más al texto.';
+    }
 
   } catch (error) {
     console.error('Error en OCR:', error);
@@ -69,8 +73,8 @@ async function procesarOCR(imagen) {
   }
 }
 
-// Convierte la imagen a escala de grises con umbral (binarización)
-// Resultado: fondo blanco, texto negro → Tesseract trabaja mucho mejor así
+// Preprocesa la imagen: escala de grises con umbral adaptativo
+// Detecta si el fondo es claro u oscuro y ajusta en consecuencia
 function preprocesarImagen(archivo) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -81,37 +85,45 @@ function preprocesarImagen(archivo) {
       canvas.width  = img.width;
       canvas.height = img.height;
       const ctx = canvas.getContext('2d');
-
-      // Dibujamos la imagen original
       ctx.drawImage(img, 0, 0);
 
-      // Obtenemos los píxeles
       const datosImagen = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const datos = datosImagen.data;
 
+      // Calculamos el brillo promedio de la imagen para saber
+      // si el fondo es claro (texto oscuro) o oscuro (texto claro)
+      let sumaGris = 0;
+      const totalPixeles = datos.length / 4;
+
       for (let i = 0; i < datos.length; i += 4) {
-        const r = datos[i];
-        const g = datos[i + 1];
-        const b = datos[i + 2];
+        sumaGris += 0.299 * datos[i] + 0.587 * datos[i+1] + 0.114 * datos[i+2];
+      }
 
-        // Fórmula estándar para convertir RGB a escala de grises
-        const gris = 0.299 * r + 0.587 * g + 0.114 * b;
+      const brilloPromedio = sumaGris / totalPixeles;
 
-        // Umbral adaptativo: píxeles oscuros → negro, claros → blanco
-        // Umbral 140: si el gris es menor a 140, es texto (negro)
-        const valor = gris < 140 ? 0 : 255;
+      // Si el brillo promedio es alto → fondo claro → umbral normal
+      // Si el brillo promedio es bajo → fondo oscuro → invertimos
+      const fondoClaro = brilloPromedio > 127;
 
-        datos[i]     = valor; // R
-        datos[i + 1] = valor; // G
-        datos[i + 2] = valor; // B
-        // datos[i + 3] es el alpha, no lo tocamos
+      for (let i = 0; i < datos.length; i += 4) {
+        const gris = 0.299 * datos[i] + 0.587 * datos[i+1] + 0.114 * datos[i+2];
+
+        let valor;
+        if (fondoClaro) {
+          // Fondo claro: pixeles oscuros son texto → los dejamos negros
+          valor = gris < 140 ? 0 : 255;
+        } else {
+          // Fondo oscuro: pixeles claros son texto → invertimos
+          valor = gris > 115 ? 0 : 255;
+        }
+
+        datos[i] = datos[i+1] = datos[i+2] = valor;
       }
 
       ctx.putImageData(datosImagen, 0, 0);
 
-      // Convertimos el canvas a Blob para pasárselo a Tesseract
       canvas.toBlob((blob) => {
-        URL.revokeObjectURL(url); // Liberamos memoria
+        URL.revokeObjectURL(url);
         resolve(blob);
       }, 'image/png');
     };
@@ -120,23 +132,17 @@ function preprocesarImagen(archivo) {
   });
 }
 
-// Filtra líneas del texto reconocido que son basura (símbolos solos, líneas vacías, etc.)
+// Filtra líneas vacías y ruido del texto reconocido
 function limpiarTexto(textoRaw) {
   const lineas = textoRaw.split('\n');
 
   const lineasLimpias = lineas.filter((linea) => {
     const limpia = linea.trim();
-
-    // Descartamos líneas vacías
     if (limpia.length === 0) return false;
 
-    // Contamos cuántos caracteres son letras o números reales
+    // Necesita al menos 2 letras o números reales para no ser ruido
     const letrasYNumeros = limpia.replace(/[^a-zA-ZáéíóúüñÁÉÍÓÚÜÑ0-9]/g, '');
-
-    // Si la línea tiene menos de 2 letras/números reales, probablemente es ruido
-    if (letrasYNumeros.length < 2) return false;
-
-    return true;
+    return letrasYNumeros.length >= 2;
   });
 
   return lineasLimpias.join('\n').trim();
