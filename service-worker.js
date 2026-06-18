@@ -4,8 +4,7 @@
 // ==============================================
 
 // Nombre del caché — si cambiamos esto, se invalida el caché anterior
-const NOMBRE_CACHE = 'relevapp-cache-v4';
-
+const NOMBRE_CACHE = 'relevapp-cache-v5';
 // Lista de archivos que queremos guardar para usar sin conexión
 const ARCHIVOS_A_CACHEAR = [
    './',
@@ -114,8 +113,7 @@ self.addEventListener('fetch', (evento) => {
             // Si no hay red y tampoco está en caché, devolvemos la página principal
             // Esto evita que aparezca la pantalla de "sin conexión" del navegador
             if (evento.request.destination === 'document') {
-              return caches.match('./index.html');
-            }
+            return caches.match('/Pwaa-relevapp/index.html'); }
           });
       })
   );
