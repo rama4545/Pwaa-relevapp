@@ -4,22 +4,22 @@
 // ==============================================
 
 // Nombre del caché — si cambiamos esto, se invalida el caché anterior
-const NOMBRE_CACHE = 'relevapp-cache-v3';
+const NOMBRE_CACHE = 'relevapp-cache-v4';
 
 // Lista de archivos que queremos guardar para usar sin conexión
 const ARCHIVOS_A_CACHEAR = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/js/camara.js',
-  '/js/ocr.js',
-  '/js/portapapeles.js',
-  '/js/geolocalizacion.js',
-  '/js/mapa.js',
-  '/js/app.js',
-  '/manifest.json',
-  '/iconos/icono-192.png',
-  '/iconos/icono-512.png',
+   './',
+  './index.html',
+  './style.css',
+  './manifest.json',
+  './iconos/icono-192.png',
+  './iconos/icono-512.png',
+  './js/camara.js',
+  './js/ocr.js',
+  './js/portapapeles.js',
+  './js/geolocalizacion.js',
+  './js/mapa.js',
+  './js/app.js',
   // Librerías externas que también queremos cachear
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
@@ -114,7 +114,7 @@ self.addEventListener('fetch', (evento) => {
             // Si no hay red y tampoco está en caché, devolvemos la página principal
             // Esto evita que aparezca la pantalla de "sin conexión" del navegador
             if (evento.request.destination === 'document') {
-              return caches.match('/index.html');
+              return caches.match('./index.html');
             }
           });
       })
