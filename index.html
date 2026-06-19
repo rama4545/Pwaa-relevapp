@@ -11,7 +11,7 @@
 
   <title>RelevApp - Relevamiento de Campo</title>
 
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="estilos.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
@@ -36,10 +36,10 @@
         Captura de Imagen
       </h2>
       <p class="descripcion-seccion">
-        Tomá una foto de un cartel, etiqueta o documento para extraer el texto automáticamente.
+        Saca una foto de un cartel, etiqueta o documento para extraer el texto automáticamente.
       </p>
 
-      <!-- Input oculto: capture="environment" abre la cámara trasera en celulares -->
+      <!-- Input oculto: capture="environment" abro la cámara trasera en celulares -->
       <input type="file" id="inputCamara" accept="image/*" capture="environment" class="input-oculto" />
 
       <button class="boton boton-primario" id="botonCapturar">
@@ -59,7 +59,7 @@
         Texto Reconocido (OCR)
       </h2>
       <p class="descripcion-seccion">
-        Tesseract.js analiza la imagen y extrae el texto automáticamente en el navegador.
+        Ahora analizamos la imagen capturada y extraemos el texto automáticamente en el navegador o app.
       </p>
 
       <button class="boton boton-secundario" id="botonOCR" disabled>
@@ -94,11 +94,11 @@
         Ubicación del Relevamiento
       </h2>
       <p class="descripcion-seccion">
-        Registrá la posición GPS exacta donde se realizó la captura.
+        Registrá la posición GPS exacta donde se realizó la captura .
       </p>
 
       <button class="boton boton-ubicacion" id="botonUbicacion">
-        🌐 Obtener Ubicación
+        🌐 Conseguir ubicación en tiempo real
       </button>
 
       <div class="tarjeta-coordenadas" id="tarjetaCoordenadas">
@@ -126,27 +126,27 @@
         Mapa Interactivo
       </h2>
       <p class="descripcion-seccion">
-        Tu posición actual se muestra en el mapa con un marcador de OpenStreetMap.
+        Tu posición actual se muestra en el mapa con un marcador rojo.
       </p>
 
       <div id="mapaUbicacion" class="mapa-contenedor"></div>
 
       <p class="nota-mapa" id="notaMapa">
-        Primero obtené tu ubicación para ver el mapa.
+        Primero consegui tu ubicación para verla en el mapa.
       </p>
     </section>
 
   </main>
 
   <footer class="pie-pagina">
-    <p>RelevApp &copy; 2025 — Técnico en Programación · EEST N°1</p>
+    <p>RelevApp &copy; 2026 - Desarrollada por Ramiro Caballero - Programación · EEST N°1</p>
   </footer>
 
   <!-- Librerías externas -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
-  <!-- Módulos JS propios (orden importa) -->
+  <!-- Módulos JS propios -->
   <script src="js/camara.js"></script>
   <script src="js/ocr.js"></script>
   <script src="js/portapapeles.js"></script>
