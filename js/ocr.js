@@ -1,7 +1,3 @@
-// ==============================================
-// js/ocr.js — Módulo de reconocimiento de texto (OCR)
-// ==============================================
-
 const botonOCR           = document.getElementById('botonOCR');
 const textoReconocido    = document.getElementById('textoReconocido');
 const placeholderTexto   = document.getElementById('placeholderTexto');
@@ -29,22 +25,21 @@ async function procesarOCR(imagen) {
   placeholderTexto.style.display = 'none';
 
   try {
-    // Corremos Tesseract dos veces: una sobre la imagen original
-    // y otra sobre la imagen preprocesada, y nos quedamos con el mejor resultado
+    // Corremos Tesseract dos veces: una sobre la imagen original y otra sobre la imagen preprocesada, y nos quedamos con el mejor resultado
     const worker = await Tesseract.createWorker('spa+eng', 1, {
       logger: (progreso) => actualizarProgreso(progreso)
     });
 
     await worker.setParameters({
-      tessedit_pageseg_mode: '3' // PSM 3 = detección automática de regiones
+      tessedit_pageseg_mode: '3' 
     });
 
-    // Pasada 1: imagen original (funciona bien con texto oscuro sobre fondo claro)
+    // Pasada 1: imagen original 
     textoProgreso.textContent = 'Analizando imagen original...';
     const resultado1 = await worker.recognize(imagen);
     const texto1 = limpiarTexto(resultado1.data.text);
 
-    // Pasada 2: imagen preprocesada (mejora texto en fondos complejos)
+    // Pasada 2: imagen preprocesada 
     textoProgreso.textContent = 'Analizando con preprocesamiento...';
     const imagenProcesada = await preprocesarImagen(imagen);
     const resultado2 = await worker.recognize(imagenProcesada);
@@ -74,8 +69,6 @@ async function procesarOCR(imagen) {
 }
 
 // Preprocesa la imagen: escala de grises con umbral adaptativo
-// Detecta si el fondo es claro u oscuro y ajusta en consecuencia
-function preprocesarImagen(archivo) {
   return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(archivo);
@@ -90,8 +83,7 @@ function preprocesarImagen(archivo) {
       const datosImagen = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const datos = datosImagen.data;
 
-      // Calculamos el brillo promedio de la imagen para saber
-      // si el fondo es claro (texto oscuro) o oscuro (texto claro)
+      // Calculamos el brillo promedio de la imagen para saber, si el fondo es claro (texto oscuro) o oscuro (texto claro)
       let sumaGris = 0;
       const totalPixeles = datos.length / 4;
 
@@ -101,8 +93,6 @@ function preprocesarImagen(archivo) {
 
       const brilloPromedio = sumaGris / totalPixeles;
 
-      // Si el brillo promedio es alto → fondo claro → umbral normal
-      // Si el brillo promedio es bajo → fondo oscuro → invertimos
       const fondoClaro = brilloPromedio > 127;
 
       for (let i = 0; i < datos.length; i += 4) {
@@ -110,10 +100,10 @@ function preprocesarImagen(archivo) {
 
         let valor;
         if (fondoClaro) {
-          // Fondo claro: pixeles oscuros son texto → los dejamos negros
+          // Fondo claro: pixeles oscuros son texto 
           valor = gris < 140 ? 0 : 255;
         } else {
-          // Fondo oscuro: pixeles claros son texto → invertimos
+          // Fondo oscuro: pixeles claros son texto 
           valor = gris > 115 ? 0 : 255;
         }
 
@@ -130,7 +120,7 @@ function preprocesarImagen(archivo) {
 
     img.src = url;
   });
-}
+
 
 // Filtra líneas vacías y ruido del texto reconocido
 function limpiarTexto(textoRaw) {
@@ -144,7 +134,7 @@ function limpiarTexto(textoRaw) {
     const letrasYNumeros = limpia.replace(/[^a-zA-ZáéíóúüñÁÉÍÓÚÜÑ0-9]/g, '');
     return letrasYNumeros.length >= 2;
   });
-
+ 
   return lineasLimpias.join('\n').trim();
 }
 
