@@ -1,10 +1,10 @@
 // Nombre del caché — si cambiamos esto, se invalida el caché anterior
-const NOMBRE_CACHE = 'relevapp-cache-v5';
+const NOMBRE_CACHE = 'relevapp-cache-v6';
 // Lista de archivos que queremos guardar para usar sin conexión
 const ARCHIVOS_A_CACHEAR = [
    './',
   './index.html',
-  './style.css',
+  './estilos.css',
   './manifest.json',
   './iconos/icono-192.png',
   './iconos/icono-512.png',
