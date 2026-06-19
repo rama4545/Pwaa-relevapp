@@ -1,7 +1,3 @@
-// ==============================================
-// js/portapapeles.js — Módulo de copia al portapapeles
-// ==============================================
-
 const btnCopiar      = document.getElementById('btnCopiar');
 const mensajeCopiado = document.getElementById('mensajeCopiado');
 
@@ -24,7 +20,7 @@ btnCopiar.addEventListener('click', async () => {
   }
 });
 
-// Fallback: crea un textarea invisible, selecciona el texto y ejecuta el comando copy
+// Fallback: creo un textarea invisible, selecciona el texto y ejecuto el comando copy
 function copiarTextoAntiguo(texto) {
   const area = document.createElement('textarea');
   area.value = texto;
@@ -37,7 +33,7 @@ function copiarTextoAntiguo(texto) {
   mostrarMensajeCopiado();
 }
 
-// Muestra el mensaje verde por 2 segundos y luego lo oculta
+// Muestra el mensaje verde por 2 segundos y despues se esconde nuevamente
 function mostrarMensajeCopiado() {
   mensajeCopiado.style.display = 'block';
   setTimeout(() => {
