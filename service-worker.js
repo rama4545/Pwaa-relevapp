@@ -1,8 +1,3 @@
-// ==============================================
-// service-worker.js — Service Worker de RelevApp
-// Se encarga del funcionamiento offline
-// ==============================================
-
 // Nombre del caché — si cambiamos esto, se invalida el caché anterior
 const NOMBRE_CACHE = 'relevapp-cache-v5';
 // Lista de archivos que queremos guardar para usar sin conexión
@@ -25,10 +20,7 @@ const ARCHIVOS_A_CACHEAR = [
   'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'
 ];
 
-// ==========================================
-// EVENTO: install
 // Se ejecuta la primera vez que se instala el SW
-// ==========================================
 self.addEventListener('install', (evento) => {
   console.log('[SW] Instalando Service Worker...');
 
@@ -51,10 +43,8 @@ self.addEventListener('install', (evento) => {
   );
 });
 
-// ==========================================
-// EVENTO: activate
+
 // Se ejecuta cuando el SW toma el control
-// ==========================================
 self.addEventListener('activate', (evento) => {
   console.log('[SW] Activando Service Worker...');
 
@@ -63,7 +53,7 @@ self.addEventListener('activate', (evento) => {
     caches.keys().then((nombresCache) => {
       return Promise.all(
         nombresCache
-          .filter((nombre) => nombre !== NOMBRE_CACHE) // Todos los que no son el actual
+          .filter((nombre) => nombre !== NOMBRE_CACHE) 
           .map((nombre) => {
             console.log('[SW] Borrando caché viejo:', nombre);
             return caches.delete(nombre);
@@ -76,10 +66,8 @@ self.addEventListener('activate', (evento) => {
   );
 });
 
-// ==========================================
-// EVENTO: fetch
+
 // Se intercepta cada vez que la app pide un recurso
-// ==========================================
 self.addEventListener('fetch', (evento) => {
 
   // Estrategia: Cache First (primero buscamos en caché, si no hay, pedimos a internet)
@@ -101,7 +89,6 @@ self.addEventListener('fetch', (evento) => {
             }
 
             // Guardamos una copia en caché para la próxima vez
-            // (clonamos porque la respuesta solo se puede leer una vez)
             const respuestaClon = respuestaRed.clone();
             caches.open(NOMBRE_CACHE).then((cache) => {
               cache.put(evento.request, respuestaClon);
@@ -111,7 +98,6 @@ self.addEventListener('fetch', (evento) => {
           })
           .catch(() => {
             // Si no hay red y tampoco está en caché, devolvemos la página principal
-            // Esto evita que aparezca la pantalla de "sin conexión" del navegador
             if (evento.request.destination === 'document') {
             return caches.match('/Pwaa-relevapp/index.html'); }
           });
