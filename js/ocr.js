@@ -1,3 +1,4 @@
+// js/ocr.js
 const botonOCR           = document.getElementById('botonOCR');
 const textoReconocido    = document.getElementById('textoReconocido');
 const placeholderTexto   = document.getElementById('placeholderTexto');
@@ -69,6 +70,8 @@ async function procesarOCR(imagen) {
 }
 
 // Preprocesa la imagen: escala de grises con umbral adaptativo
+// Detecta si el fondo es claro o oscuro y ajusta a partir de eso
+function preprocesarImagen(archivo) {
   return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(archivo);
@@ -83,7 +86,7 @@ async function procesarOCR(imagen) {
       const datosImagen = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const datos = datosImagen.data;
 
-      // Calculamos el brillo promedio de la imagen para saber, si el fondo es claro (texto oscuro) o oscuro (texto claro)
+      // Calculamos el brillo promedio de la imagen para saber si el fondo es claro (texto oscuro) o oscuro (texto claro)
       let sumaGris = 0;
       const totalPixeles = datos.length / 4;
 
@@ -93,6 +96,8 @@ async function procesarOCR(imagen) {
 
       const brilloPromedio = sumaGris / totalPixeles;
 
+      // Si el brillo promedio es alto,fondo claro
+      // Si el brillo promedio es bajo,fondo oscuro
       const fondoClaro = brilloPromedio > 127;
 
       for (let i = 0; i < datos.length; i += 4) {
@@ -120,9 +125,8 @@ async function procesarOCR(imagen) {
 
     img.src = url;
   });
+}
 
-
-// Filtra líneas vacías y ruido del texto reconocido
 function limpiarTexto(textoRaw) {
   const lineas = textoRaw.split('\n');
 
@@ -134,7 +138,7 @@ function limpiarTexto(textoRaw) {
     const letrasYNumeros = limpia.replace(/[^a-zA-ZáéíóúüñÁÉÍÓÚÜÑ0-9]/g, '');
     return letrasYNumeros.length >= 2;
   });
- 
+
   return lineasLimpias.join('\n').trim();
 }
 
