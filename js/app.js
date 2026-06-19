@@ -1,8 +1,3 @@
-// ==============================================
-// js/app.js — Punto de entrada principal de RelevApp
-// Registra el Service Worker para que funcione como PWA
-// ==============================================
-
 // Esperamos que la página cargue completamente antes de registrar el SW
 window.addEventListener('load', () => {
 
