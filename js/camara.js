@@ -1,7 +1,3 @@
-// ==============================================
-// js/camara.js — Módulo de captura de imagen
-// ==============================================
-
 // Guardamos la imagen seleccionada para que otros módulos puedan usarla
 let imagenSeleccionada = null;
 
