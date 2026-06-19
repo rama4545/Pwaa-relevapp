@@ -1,8 +1,4 @@
-// ==============================================
-// js/mapa.js — Módulo del mapa interactivo
 // Usa Leaflet.js con tiles de OpenStreetMap
-// ==============================================
-
 // Guardamos la instancia del mapa y el marcador para no duplicarlos
 let mapaLeaflet  = null;
 let marcadorMapa = null;
@@ -27,7 +23,6 @@ function mostrarEnMapa(latitud, longitud) {
   }
 
   // Primera vez: creamos el mapa con Leaflet
-  // setView([lat, lng], zoom) — zoom 16 es a nivel de calle
   mapaLeaflet = L.map('mapaUbicacion').setView([latitud, longitud], 16);
 
   // Cargamos las imágenes del mapa desde OpenStreetMap (gratuito y sin API key)
@@ -42,7 +37,7 @@ function mostrarEnMapa(latitud, longitud) {
     .bindPopup(generarContenidoPopup(latitud, longitud))
     .openPopup();
 
-  // Leaflet puede quedar con tamaño incorrecto si el div estaba oculto
+
   // Este timeout fuerza que recalcule el tamaño del mapa
   setTimeout(() => {
     mapaLeaflet.invalidateSize();
