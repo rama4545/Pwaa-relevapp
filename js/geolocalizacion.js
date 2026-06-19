@@ -1,6 +1,4 @@
-// ==============================================
-// js/geolocalizacion.js — Módulo de geolocalización
-// ==============================================
+// js/geolocalizacion.js
 
 const botonUbicacion = document.getElementById('botonUbicacion');
 const valorLatitud   = document.getElementById('valorLatitud');
@@ -44,8 +42,7 @@ function mostrarUbicacion(posicion) {
   const precisionMetros = Math.round(precision);
   valorPrecision.textContent = precisionMetros + ' m';
 
-  // Si la precisión es mayor a 500m, avisamos que es poco confiable
-  // Eso pasa cuando el GPS no está disponible y usa WiFi o IP
+  // Si la precisión es mayor a 500m, avisamos que es poco confiable, eso pasa cuando el GPS no está disponible y usa WiFi o IP
   if (precisionMetros > 500) {
     mostrarErrorUbicacion(
       `⚠️ Precisión baja (${precisionMetros} m). Activá el GPS del celular y probá al aire libre para obtener una ubicación exacta.`
