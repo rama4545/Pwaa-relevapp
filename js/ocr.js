@@ -27,6 +27,7 @@ async function procesarOCR(imagen) {
       logger: (p) => actualizarProgreso(p)
     });
 
+    // PSM modes a probar: 6 = bloque uniforme, 11 = texto disperso, 13 = línea sin OSD
     const psms = ['6', '11', '13'];
     const variantes = await generarVariantes(imagen);
     const candidatos = [];
@@ -40,7 +41,8 @@ async function procesarOCR(imagen) {
         const res = await worker.recognize(blob);
         const texto = limpiarTexto(res.data.text);
         const confianza = res.data.confidence || 0;
-        candidatos.push({ texto, confianza, psm, nombre });
+        const score = confianza * 0.7 + texto.length * 0.3;
+        candidatos.push({ texto, confianza, score, psm, nombre });
         pasoTotal++;
         barraProgreso.style.width = Math.round((pasoTotal / totalPasos) * 100) + '%';
       }
@@ -48,7 +50,7 @@ async function procesarOCR(imagen) {
 
     await worker.terminate();
 
-    candidatos.sort((a, b) => b.confianza - a.confianza);
+    candidatos.sort((a, b) => b.score - a.score);
     const mejor = candidatos[0];
 
     if (mejor && mejor.texto.length > 0) {
@@ -68,134 +70,104 @@ async function procesarOCR(imagen) {
   }
 }
 
+// Genera múltiples variantes de la imagen con distintos preprocesamientos
 async function generarVariantes(archivo) {
-  const bitmap = await createImageBitmap(archivo);
-  const escala = bitmap.width < 1200 ? 3 : bitmap.width < 2000 ? 2 : 1;
-  const w = bitmap.width * escala;
-  const h = bitmap.height * escala;
+  const bitmapOriginal = await createImageBitmap(archivo);
+  const escala = bitmapOriginal.width < 1200 ? 3 : bitmapOriginal.width < 2000 ? 2 : 1;
+  const w = bitmapOriginal.width * escala;
+  const h = bitmapOriginal.height * escala;
 
   const canvas = document.createElement('canvas');
   canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(bitmap, 0, 0, w, h);
+  ctx.drawImage(bitmapOriginal, 0, 0, w, h);
 
   const imgData = ctx.getImageData(0, 0, w, h);
-  const d = imgData.data;
-
-  // Extraer canales crudos
-  const rojo  = new Uint8ClampedArray(w * h);
-  const verde = new Uint8ClampedArray(w * h);
-  const azul  = new Uint8ClampedArray(w * h);
-  const gris  = new Uint8ClampedArray(w * h);
-  const hsvV  = new Uint8ClampedArray(w * h);
-  const hslL  = new Uint8ClampedArray(w * h);
-
-  for (let i = 0, j = 0; i < d.length; i += 4, j++) {
-    const r = d[i], g = d[i + 1], b = d[i + 2];
-    rojo[j]  = r;
-    verde[j] = g;
-    azul[j]  = b;
-    gris[j]  = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-
-    // HSV: canal V = max(r,g,b)
-    hsvV[j] = Math.max(r, g, b);
-
-    // HSL: canal L = (max+min)/2
-    hslL[j] = Math.round((Math.max(r, g, b) + Math.min(r, g, b)) / 2);
-  }
-
+  const gris = toGrayscale(imgData.data, w, h);
   const brilloPromedio = gris.reduce((a, b) => a + b, 0) / gris.length;
   const fondoClaro = brilloPromedio > 127;
 
-  const canales = { rojo, verde, azul, gris, hsvV, hslL };
-
   return [
-    { blob: await blobDesdeCanvas(canvas),                                      nombre: 'original' },
-    { blob: await canalABlob(gris,  w, h),                                      nombre: 'grises' },
-    { blob: await canalABlob(rojo,  w, h),                                      nombre: 'canal-rojo' },
-    { blob: await canalABlob(verde, w, h),                                      nombre: 'canal-verde' },
-    { blob: await canalABlob(azul,  w, h),                                      nombre: 'canal-azul' },
-    { blob: await canalABlob(hsvV,  w, h),                                      nombre: 'hsv-v' },
-    { blob: await canalABlob(hslL,  w, h),                                      nombre: 'hsl-l' },
-    { blob: await binarizar(gris,   w, h, 'alto-contraste', fondoClaro),        nombre: 'alto-contraste' },
-    { blob: await binarizar(gris,   w, h, 'otsu',           fondoClaro),        nombre: 'otsu' },
-    { blob: await binarizar(gris,   w, h, 'nitidez',        fondoClaro),        nombre: 'nitidez' },
-    { blob: await binarizar(gris,   w, h, 'invertida',      fondoClaro),        nombre: 'invertida' },
+    { blob: await blobDesdeCanvas(canvas), nombre: 'original-escalada' },
+    { blob: await procesarConFiltros(gris, w, h, 'alto-contraste', fondoClaro), nombre: 'alto-contraste' },
+    { blob: await procesarConFiltros(gris, w, h, 'otsu', fondoClaro), nombre: 'binarizacion-otsu' },
+    { blob: await procesarConFiltros(gris, w, h, 'nitidez', fondoClaro), nombre: 'nitidez' },
+    { blob: await procesarConFiltros(gris, w, h, 'invertida', fondoClaro), nombre: 'invertida' },
   ];
 }
 
-// Convierte un canal monocromático a blob PNG en escala de grises
-async function canalABlob(canal, w, h) {
-  const rgba = new Uint8ClampedArray(w * h * 4);
-  for (let i = 0; i < canal.length; i++) {
-    rgba[i * 4] = rgba[i * 4 + 1] = rgba[i * 4 + 2] = canal[i];
-    rgba[i * 4 + 3] = 255;
+function toGrayscale(datos, w, h) {
+  const gris = new Uint8ClampedArray(w * h);
+  for (let i = 0, j = 0; i < datos.length; i += 4, j++) {
+    gris[j] = Math.round(0.299 * datos[i] + 0.587 * datos[i + 1] + 0.114 * datos[i + 2]);
   }
-  const canvas = document.createElement('canvas');
-  canvas.width = w; canvas.height = h;
-  canvas.getContext('2d').putImageData(new ImageData(rgba, w, h), 0, 0);
-  return blobDesdeCanvas(canvas);
+  return gris;
 }
 
 function calcularUmbralOtsu(gris) {
-  const hist = new Array(256).fill(0);
-  for (const v of gris) hist[v]++;
+  const histograma = new Array(256).fill(0);
+  for (const v of gris) histograma[v]++;
   const total = gris.length;
   let suma = 0;
-  for (let i = 0; i < 256; i++) suma += i * hist[i];
-  let sumaBg = 0, wBg = 0, varMax = 0, umbral = 0;
+  for (let i = 0; i < 256; i++) suma += i * histograma[i];
+  let sumaBg = 0, wBg = 0, wFg = 0, varMax = 0, umbral = 0;
   for (let t = 0; t < 256; t++) {
-    wBg += hist[t];
-    if (!wBg) continue;
-    const wFg = total - wBg;
-    if (!wFg) break;
-    sumaBg += t * hist[t];
-    const diff = sumaBg / wBg - (suma - sumaBg) / wFg;
-    const varEntre = wBg * wFg * diff * diff;
+    wBg += histograma[t];
+    if (wBg === 0) continue;
+    wFg = total - wBg;
+    if (wFg === 0) break;
+    sumaBg += t * histograma[t];
+    const mBg = sumaBg / wBg;
+    const mFg = (suma - sumaBg) / wFg;
+    const varEntre = wBg * wFg * (mBg - mFg) ** 2;
     if (varEntre > varMax) { varMax = varEntre; umbral = t; }
   }
   return umbral;
 }
 
 function aplicarNitidez(gris, w, h) {
+  // Kernel de sharpen 3×3
   const kernel = [0, -1, 0, -1, 5, -1, 0, -1, 0];
-  const sal = new Uint8ClampedArray(gris.length);
+  const salida = new Uint8ClampedArray(gris.length);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      let s = 0;
+      let suma = 0;
       for (let ky = -1; ky <= 1; ky++) {
         for (let kx = -1; kx <= 1; kx++) {
           const ny = Math.min(Math.max(y + ky, 0), h - 1);
           const nx = Math.min(Math.max(x + kx, 0), w - 1);
-          s += gris[ny * w + nx] * kernel[(ky + 1) * 3 + (kx + 1)];
+          suma += gris[ny * w + nx] * kernel[(ky + 1) * 3 + (kx + 1)];
         }
       }
-      sal[y * w + x] = Math.min(Math.max(s, 0), 255);
+      salida[y * w + x] = Math.min(Math.max(suma, 0), 255);
     }
   }
-  return sal;
+  return salida;
 }
 
 function reducirRuido(gris, w, h) {
-  const sal = new Uint8ClampedArray(gris.length);
+  // Mediana 3×3 simplificada
+  const salida = new Uint8ClampedArray(gris.length);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      const v = [];
+      const vecinos = [];
       for (let ky = -1; ky <= 1; ky++) {
         for (let kx = -1; kx <= 1; kx++) {
-          v.push(gris[Math.min(Math.max(y + ky, 0), h - 1) * w + Math.min(Math.max(x + kx, 0), w - 1)]);
+          const ny = Math.min(Math.max(y + ky, 0), h - 1);
+          const nx = Math.min(Math.max(x + kx, 0), w - 1);
+          vecinos.push(gris[ny * w + nx]);
         }
       }
-      v.sort((a, b) => a - b);
-      sal[y * w + x] = v[4];
+      vecinos.sort((a, b) => a - b);
+      salida[y * w + x] = vecinos[4];
     }
   }
-  return sal;
+  return salida;
 }
 
-async function binarizar(grisOriginal, w, h, modo, fondoClaro) {
+async function procesarConFiltros(grisOriginal, w, h, modo, fondoClaro) {
   let gris = new Uint8ClampedArray(grisOriginal);
 
   if (modo === 'nitidez') {
@@ -203,23 +175,35 @@ async function binarizar(grisOriginal, w, h, modo, fondoClaro) {
     gris = aplicarNitidez(gris, w, h);
   }
 
-  // Estiramiento de contraste
+  // Estiramiento de contraste CLAHE simple
   let min = 255, max = 0;
   for (const v of gris) { if (v < min) min = v; if (v > max) max = v; }
-  if (max > min) for (let i = 0; i < gris.length; i++)
-    gris[i] = Math.round(((gris[i] - min) / (max - min)) * 255);
+  if (max > min) {
+    for (let i = 0; i < gris.length; i++) {
+      gris[i] = Math.round(((gris[i] - min) / (max - min)) * 255);
+    }
+  }
 
-  const umbral = (modo === 'otsu' || modo === 'nitidez')
-    ? calcularUmbralOtsu(gris)
-    : (modo === 'alto-contraste' ? (fondoClaro ? 150 : 105) : 127);
+  let umbral;
+  if (modo === 'otsu' || modo === 'nitidez') {
+    umbral = calcularUmbralOtsu(gris);
+  } else if (modo === 'alto-contraste') {
+    umbral = fondoClaro ? 150 : 105;
+  } else {
+    umbral = 127;
+  }
 
   const rgba = new Uint8ClampedArray(w * h * 4);
   for (let i = 0; i < gris.length; i++) {
-    let v;
-    if (modo === 'invertida')    v = gris[i] > umbral ? 0 : 255;
-    else if (!fondoClaro)        v = gris[i] > umbral ? 255 : 0;
-    else                         v = gris[i] < umbral ? 0 : 255;
-    rgba[i * 4] = rgba[i * 4 + 1] = rgba[i * 4 + 2] = v;
+    let valor;
+    if (modo === 'invertida') {
+      valor = gris[i] > umbral ? 0 : 255;
+    } else if (!fondoClaro) {
+      valor = gris[i] > umbral ? 255 : 0;
+    } else {
+      valor = gris[i] < umbral ? 0 : 255;
+    }
+    rgba[i * 4] = rgba[i * 4 + 1] = rgba[i * 4 + 2] = valor;
     rgba[i * 4 + 3] = 255;
   }
 
@@ -238,8 +222,9 @@ function limpiarTexto(textoRaw) {
     .split('\n')
     .map((l) => l.trim())
     .filter((l) => {
-      if (!l.length) return false;
-      return l.replace(/[^a-zA-ZáéíóúüñÁÉÍÓÚÜÑ0-9]/g, '').length >= 2;
+      if (l.length === 0) return false;
+      const alfanum = l.replace(/[^a-zA-ZáéíóúüñÁÉÍÓÚÜÑ0-9]/g, '');
+      return alfanum.length >= 2;
     })
     .join('\n')
     .trim();
